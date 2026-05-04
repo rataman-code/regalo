@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universo del Amor 🌌</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #000010; 
+            overflow: hidden; 
+            cursor: grab; 
+            font-family: 'Georgia', serif; 
+            height: 100vh; 
+            width: 100vw; 
+            user-select: none; 
+        }
+        body:active { cursor: grabbing; }
+        canvas { display: block; }
+
+        .welcome-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(ellipse at center, #1a0a2e 0%, #000010 70%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 1000; transition: opacity 1.2s ease, transform 1.2s ease;
+        }
+        .welcome-screen.hidden { opacity: 0; transform: scale(1.15); pointer-events: none; }
+
+        .stars-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .star-dot {
+            position: absolute; background: white; border-radius: 50%;
+            animation: twinkle var(--duration) ease-in-out infinite;
+            animation-delay: var(--delay);
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.9; transform: scale(2); }
+        }
+
+        .welcome-content { position: relative; z-index: 1; text-align: center; animation: float 4s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-18px); } }
+
+        .welcome-title {
+            font-size: clamp(2rem, 5vw, 4.5rem); color: #ffd4e8;
+            text-shadow: 0 0 20px #ff6b9d, 0 0 40px #ff6b9d, 0 0 80px #c44dff, 0 0 120px #c44dff, 0 0 160px #ff6b9d;
+            margin-bottom: 2rem; letter-spacing: 5px; font-weight: normal; line-height: 1.3;
+        }
+
+        .heart-icon { font-size: 5rem; display: block; margin-bottom: 1.5rem; animation: heartbeat 1.8s ease-in-out infinite; }
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            12% { transform: scale(1.3); } 24% { transform: scale(1); }
+            36% { transform: scale(1.2); } 48% { transform: scale(1); }
+        }
+
+        .btn-start {
+            background: transparent; border: 2px solid #ffd4e8; color: #ffd4e8;
+            font-size: 1.5rem; padding: 16px 55px; border-radius: 50px; cursor: pointer;
+            letter-spacing: 4px; transition: all 0.5s ease; font-family: 'Georgia', serif;
+            text-shadow: 0 0 10px #ff6b9d;
+            box-shadow: 0 0 25px rgba(255,107,157,0.35), inset 0 0 25px rgba(255,107,157,0.12);
+        }
+        .btn-start:hover {
+            background: rgba(255,107,157,0.18); border-color: #ffb8d4;
+            box-shadow: 0 0 50px rgba(255,107,157,0.7), 0 0 100px rgba(196,77,255,0.5);
+            transform: scale(1.06); color: #fff;
+        }
+        .btn-start:active { transform: scale(0.95); transition: transform 0.15s ease; }
+
+        .sparkle {
+            position: absolute; pointer-events: none;
+            animation: sparkle-fly 1.5s ease-out forwards; font-size: 1.8rem;
+        }
+        @keyframes sparkle-fly {
+            0% { opacity: 1; transform: translate(0,0) scale(1) rotate(0deg); }
+            100% { opacity: 0; transform: translate(var(--tx),var(--ty)) scale(0) rotate(180deg); }
+        }
+
+        .music-control { display: none !important; }
+
+        .discovery-toast {
+            position: fixed; top: 30px; left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: rgba(0,0,0,0.7); border: 1px solid rgba(255,200,220,0.4);
+            color: #ffd4e8; padding: 12px 24px; border-radius: 25px;
+            z-index: 1500; font-size: 1rem; backdrop-filter: blur(10px);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none; text-shadow: 0 0 10px rgba(255,107,157,0.5);
+        }
+        .discovery-toast.show { transform: translateX(-50%) translateY(0); }
+
+        .fullscreen-btn {
+            position: fixed; bottom: 30px; left: 30px; z-index: 1500;
+            background: rgba(0,0,0,0.6); border: 1px solid rgba(255,200,220,0.5);
+            color: #ffd4e8; width: 50px; height: 50px; border-radius: 50%;
+            cursor: pointer; font-size: 1.5rem; transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(10px); box-shadow: 0 0 20px rgba(255,107,157,0.3);
+            opacity: 0; pointer-events: none;
+        }
+        .fullscreen-btn.visible { opacity: 1; pointer-events: all; }
+        .fullscreen-btn:hover {
+            background: rgba(255,107,157,0.3);
+            box-shadow: 0 0 35px rgba(255,107,157,0.6); transform: scale(1.1);
+        }
+
+        .discovery-counter {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            color: rgba(255,200,220,0.9); font-size: 1.1rem; z-index: 500; pointer-events: none;
+            text-shadow: 0 0 15px rgba(255,107,157,0.7); letter-spacing: 2px;
+            background: rgba(0,0,0,0.5); padding: 8px 20px; border-radius: 20px;
+            border: 1px solid rgba(255,150,200,0.3);
+        }
+        .discovery-counter .count { color: #ffd4e8; font-weight: bold; font-size: 1.3rem; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center;
+            z-index: 2000; opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal-content {
+            background: linear-gradient(135deg, #1a1030, #0d1b2a);
+            border: 2px solid rgba(255,180,220,0.5); border-radius: 20px; padding: 30px;
+            max-width: 550px; width: 90%; text-align: center;
+            box-shadow: 0 0 60px rgba(255,107,157,0.4), 0 0 120px rgba(150,100,255,0.3);
+            animation: modalIn 0.5s ease; position: relative;
+        }
+        @keyframes modalIn {
+            from { transform: scale(0.7) translateY(30px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .modal-image {
+            width: 100%; max-height: 350px; object-fit: cover;
+            border-radius: 15px; margin-bottom: 20px;
+            border: 3px solid rgba(255,200,220,0.4);
+            box-shadow: 0 0 30px rgba(255,150,200,0.3);
+        }
+        .modal-placeholder {
+            width: 100%; height: 250px; border-radius: 15px; margin-bottom: 20px;
+            display: flex; align-items: center; justify-content: center; font-size: 8rem;
+            border: 3px solid rgba(255,200,220,0.4);
+            box-shadow: 0 0 30px rgba(255,150,200,0.3);
+            background: radial-gradient(ellipse at center, rgba(255,150,200,0.2), transparent);
+            animation: musicPulse 2s ease-in-out infinite;
+        }
+        @keyframes musicPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .modal-title {
+            color: #ffd4e8; font-size: 2rem; margin-bottom: 10px;
+            text-shadow: 0 0 15px rgba(255,107,157,0.6);
+        }
+        .modal-message {
+            color: #ffd4e8; font-size: 1.3rem; line-height: 1.6;
+            text-shadow: 0 0 10px rgba(255,107,157,0.4); margin-bottom: 20px;
+            white-space: pre-line;
+        }
+        .modal-close {
+            background: transparent; border: 1px solid #ffd4e8; color: #ffd4e8;
+            padding: 10px 30px; border-radius: 25px; cursor: pointer; font-size: 1rem;
+            transition: all 0.3s ease; font-family: 'Georgia', serif; letter-spacing: 2px;
+        }
+        .modal-close:hover {
+            background: rgba(255,107,157,0.2);
+            box-shadow: 0 0 25px rgba(255,107,157,0.5); transform: scale(1.05);
+        }
+        .music-notes {
+            position: fixed; pointer-events: none; z-index: 2500;
+            animation: floatUp 2s ease-out forwards;
+            font-size: 2rem;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+            100% { opacity: 0; transform: translateY(-150px) rotate(30deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="welcome-screen" id="welcomeScreen">
+        <div class="stars-bg" id="welcomeStars"></div>
+        <div class="welcome-content">
+            <span class="heart-icon">💖</span>
+            <h1 class="welcome-title">Bienvenida al<br>Universo del Amor</h1>
+            <button class="btn-start" id="btnStart">✦ EMPEZAR ✦</button>
+        </div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="discovery-counter" id="discoveryCounter">
+        Secretos descubiertos: <span class="count" id="countNumber">0</span>/54
+    </div>
+
+    <div class="discovery-toast" id="discoveryToast"></div>
+
+    <button class="fullscreen-btn" id="fullscreenBtn" title="Pantalla completa">📺</button>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content" id="modalContent"></div>
+    </div>
+
+    <script>
+        // ========== CONFIGURACIÓN ==========
+        const CONFIG = {
+            ROMANTIC_SPEED: 0.3,
+            WORLD_WIDTH: 3200,
+            WORLD_HEIGHT: 3200,
+            NUM_STARS: 5000,
+            SPECIAL_STARS: 30,
+            TOTAL_DISCOVERIES: 54,
+            MIN_ORBIT: 50,
+            MAX_ORBIT: 2000,
+            MARGIN: 200,
+            STAR_COLORS: ['#ffffff', '#ffd4e8', '#d4e8ff', '#fff8d4', '#e8d4ff', '#ffd4f0', '#d4ffe8', '#ffe0f0', '#ffe4f0', '#e0e0ff'],
+            NEBULA_COLORS: [
+                'rgba(255,140,200,0.03)', 'rgba(255,180,220,0.025)',
+                'rgba(200,140,255,0.03)', 'rgba(140,180,255,0.025)',
+                'rgba(255,160,180,0.028)', 'rgba(180,140,255,0.028)',
+                'rgba(255,200,210,0.025)', 'rgba(200,160,255,0.03)'
+            ],
+            SPARKLE_EMOJIS: ['✨', '💫', '⭐', '🌟', '💖', '💕', '🌸'],
+            MAX_COMETS: 5,
+            MAX_SHOOTING_STARS: 3,
+            ASTEROID_BELT_INNER: 320,
+            ASTEROID_BELT_OUTER: 375,
+            MAX_ASTEROIDS: 600,
+            KUIPER_BELT_INNER: 800,
+            KUIPER_BELT_OUTER: 950,
+            MAX_KUIPER_OBJECTS: 800,
+            PLAYLIST: [
+                { name: 'Canción 1', url: 'cancion1.mp3', emoji: '🎵', message: 'Esta canción me recuerda a ti porque...\neres la melodía más hermosa de mi vida 💫' },
+                { name: 'Canción 2', url: 'cancion2.mp3', emoji: '🎶', message: 'Esta canción me recuerda a ti porque...\ncada nota brilla como tus ojos al despertar 🌟' },
+                { name: 'Canción 3', url: 'cancion3.mp3', emoji: '🎼', message: 'Esta canción me recuerda a ti porque...\nsu ritmo es tan dulce como tu voz al hablarme 💖' },
+                { name: 'Canción 4', url: 'cancion4.mp3', emoji: '🎵', message: 'Esta canción me recuerda a ti porque...\nbaila en mi corazón como tú bailas en mis sueños 💫' },
+                { name: 'Canción 5', url: 'cancion5.mp3', emoji: '🎶', message: 'Esta canción me recuerda a ti porque...\ncruza el universo igual que mi amor por ti 🌌' },
+                { name: 'Canción 6', url: 'cancion6.mp3', emoji: '🎼', message: 'Esta canción me recuerda a ti porque...\nilumina la oscuridad como tu sonrisa ilumina todo ✨' },
+                { name: 'Canción 7', url: 'cancion7.mp3', emoji: '🎵', message: 'Esta canción me recuerda a ti porque...\nes una sinfonía dedicada a la dueña de mi corazón 💝' },
+                { name: 'Canción 8', url: 'cancion8.mp3', emoji: '🎶', message: 'Esta canción me recuerda a ti porque...\nviaja por galaxias solo para llegar a donde estás 💕' },
+                { name: 'Canción 9', url: 'cancion9.mp3', emoji: '🎼', message: 'Esta canción me recuerda a ti porque...\ncelebra la magia de haberte encontrado 🌠' },
+                { name: 'Canción 10', url: 'cancion10.mp3', emoji: '🎵', message: 'Esta canción me recuerda a ti porque...\neres la persona más hermosa que existe en el cosmos 💗' },
+                { name: 'Canción 11', url: 'cancion11.mp3', emoji: '🎶', message: 'Esta canción me recuerda a ti porque...\nnuestro amor es una melodía que nunca terminará ♾️' }
+            ],
+            COMET_COLORS: ['purple', 'red', 'blue', 'pink']
+        };
+
+        const STAR_MESSAGES = [
+            'Eres la estrella que ilumina mis noches más oscuras ✨',
+            'Cada estrella me recuerda la luz en tus ojos 💫',
+            'Brillas más que cualquier constelación en el cielo 🌟',
+            'Tu sonrisa tiene más brillo que mil estrellas juntas ⭐',
+            'En este universo infinito, tú eres mi estrella favorita 💖',
+            'Como las estrellas, mi amor por ti nunca se apaga 💕',
+            'Eres polvo de estrellas convertido en la persona perfecta 🌌',
+            'Cada vez que pienso en ti, una estrella nueva nace 💝',
+            'Las estrellas son testigos de lo mucho que te amo 💗',
+            'Tu amor es la constelación que guía mi camino 🗺️',
+            'Brillas tanto que opacas al mismo sol ☀️',
+            'Eres la estrella polar de mi corazón 🧭',
+            'Mil estrellas no bastan para describir tu belleza 💎',
+            'En la galaxia de mi vida, tú eres la supernova 💥',
+            'Cada estrella fugaz me recuerda lo afortunado que soy 🌠',
+            'Tu amor es infinito como las estrellas del universo ♾️',
+            'Eres la razón por la que mi universo tiene luz 🌟',
+            'Como estrella en la noche, siempre encuentro paz en ti 🌙',
+            'Si pudiera, te bajaría todas las estrellas del cielo 🎁',
+            'Eres más radiante que la estrella más brillante 💫',
+            'Contigo, cada noche es un cielo estrellado 🖤',
+            'Las estrellas me susurran tu nombre cada noche 🌬️',
+            'Eres el destello que ilumina todo mi ser ✨',
+            'En el mapa de mi corazón, tú eres la estrella guía 🗺️',
+            'No necesito telescopio para ver lo hermosa que eres 🔭',
+            'Tu voz es como la melodía de las estrellas 🎵',
+            'Cada estrella en el cielo celebra nuestro amor 🎉',
+            'Eres la chispa que enciende mi universo 🔥',
+            'Como estrella errante, siempre vuelvo a ti 💞',
+            'Tu amor es el big bang que creó mi felicidad 💥'
+        ];
+
+        const PLANET_MESSAGES = {
+            'Mercurio': 'El más cercano al sol, pequeño pero veloz...\nComo tú, que estás cerca de mi corazón 💫',
+            'Venus': 'El lucero del amanecer, el más brillante...\nComo tú, que iluminas mis días y noches 💖',
+            'Tierra': 'Nuestro hogar azul, lleno de vida y amor...\nEl lugar donde nuestros caminos se cruzaron 🌍',
+            'Marte': 'El planeta rojo, testigo de mil batallas...\nComo mi corazón, que late fuerte por ti ♂️',
+            'Júpiter': 'El gigante protector, rey de los planetas...\nComo mi amor por ti, el más grande de todos ♃',
+            'Saturno': 'Señor de los anillos, belleza infinita...\nComo tú, que me rodeas con tu amor eterno 🪐',
+            'Urano': 'El gigante de hielo, misterioso y único...\nComo tú, diferente a todas las demás ⛢',
+            'Neptuno': 'El más lejano, envuelto en azul profundo...\nComo mi amor, que llega hasta los confines del universo ♆'
+        };
+
+        const SUN_DATA = {
+            image: 'img/sol.jpg', emoji: '☀️', message: 'El centro de todo, la fuente de luz y vida...\nTú eres mi sol, el centro de mi universo ☀️\n\nTe amo con todo mi corazón 💖'
+        };
+
+        const PLANET_DATA = {
+            'Mercurio': { image: 'img/mercurio.jpg', emoji: '☿️', message: PLANET_MESSAGES['Mercurio'] },
+            'Venus':    { image: 'img/venus.jpg',    emoji: '♀️', message: PLANET_MESSAGES['Venus'] },
+            'Tierra':   { image: 'img/tierra.jpg',   emoji: '🌍', message: PLANET_MESSAGES['Tierra'] },
+            'Marte':    { image: 'img/marte.jpg',    emoji: '♂️', message: PLANET_MESSAGES['Marte'] },
+            'Júpiter':  { image: 'img/jupiter.jpg',  emoji: '♃', message: PLANET_MESSAGES['Júpiter'] },
+            'Saturno':  { image: 'img/saturno.jpg',  emoji: '🪐', message: PLANET_MESSAGES['Saturno'] },
+            'Urano':    { image: 'img/urano.jpg',    emoji: '⛢', message: PLANET_MESSAGES['Urano'] },
+            'Neptuno':  { image: 'img/neptuno.jpg',  emoji: '♆', message: PLANET_MESSAGES['Neptuno'] }
+        };
+
+        const DWARF_PLANET_DATA = {
+            'Ceres':   { image: 'img/ceres.jpg',   emoji: '🪨', orbitRadius: 350, size: 5, color: '#c0b0a0', speed: 0.55 },
+            'Plutón':  { image: 'img/pluton.jpg',  emoji: '❄️', orbitRadius: 830, size: 6, color: '#d4c8b8', speed: 0.12,
+                moon: { name: 'Caronte', size: 3.5, distance: 12, color: '#b8a8a0', speed: 2, angle: 0 }
+            },
+            'Haumea':  { image: 'img/haumea.jpg',  emoji: '🏈', orbitRadius: 880, size: 6, color: '#b8c8d0', speed: 0.10, elongated: true },
+            'Makemake':{ image: 'img/makemake.jpg', emoji: '🟤', orbitRadius: 930, size: 5, color: '#c8b0a0', speed: 0.09 },
+            'Eris':    { image: 'img/eris.jpg',     emoji: '🔮', orbitRadius: 980, size: 6, color: '#e8e0f0', speed: 0.07 }
+        };
+
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const welcomeStarsContainer = document.getElementById('welcomeStars');
+        const btnStart = document.getElementById('btnStart');
+        const discoveryCounter = document.getElementById('discoveryCounter');
+        const countNumber = document.getElementById('countNumber');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalContent = document.getElementById('modalContent');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const discoveryToast = document.getElementById('discoveryToast');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+        discoveryCounter.style.display = 'none';
+        let W = canvas.width = window.innerWidth;
+        let H = canvas.height = window.innerHeight;
+
+        // ========== SISTEMA DE AUDIO ==========
+        let audioElement = null;
+        let isMusicPlaying = false;
+        let musicStarted = false;
+        let currentSongIndex = 0;
+        const discoveredComets = new Set();
+        let cometDiscoveryCount = 0;
+
+        function initAudio() {
+            if (audioElement) { audioElement.pause(); audioElement = null; }
+            const songUrl = CONFIG.PLAYLIST[currentSongIndex].url;
+            audioElement = new Audio(songUrl);
+            audioElement.loop = false;
+            audioElement.crossOrigin = "anonymous";
+            audioElement.addEventListener('ended', () => { nextSong(); });
+            audioElement.volume = 0.3;
+        }
+
+        function startMusic() {
+            if (!musicStarted) { initAudio(); musicStarted = true; }
+            if (!isMusicPlaying) {
+                audioElement.play().then(() => {
+                    isMusicPlaying = true;
+                }).catch(e => console.log('Error:', e));
+            }
+        }
+
+        function nextSong() {
+            currentSongIndex = (currentSongIndex + 1) % CONFIG.PLAYLIST.length;
+            const wasPlaying = isMusicPlaying;
+            initAudio();
+            if (wasPlaying) {
+                audioElement.play().then(() => {
+                    isMusicPlaying = true;
+                }).catch(e => console.log('Error:', e));
+            }
+        }
+
+        // ========== PANTALLA COMPLETA ==========
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => console.log('Fullscreen error:', e));
+                fullscreenBtn.innerHTML = '🔳';
+            } else {
+                document.exitFullscreen();
+                fullscreenBtn.innerHTML = '📺';
+            }
+        });
+        document.addEventListener('fullscreenchange', () => {
+            fullscreenBtn.innerHTML = document.fullscreenElement ? '🔳' : '📺';
+        });
+
+        // ========== ESTADO GLOBAL ==========
+        let globalTime = 0;
+        let offsetX = 0, offsetY = 0;
+        let targetX = 0, targetY = 0;
+        let isDragging = false;
+        let lastMouseX = 0, lastMouseY = 0;
+        let dragMoved = false;
+        let discoveries = 0;
+        const discoveredStars = new Set();
+        const discoveredPlanets = new Set();
+        const discoveredDwarfPlanets = new Set();
+
+        const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+        const random = (a, b) => a + Math.random() * (b - a);
+        const pick = (array) => array[Math.floor(Math.random() * array.length)];
+
+        function getLimits() {
+            const m = CONFIG.MARGIN;
+            return {
+                minX: -(CONFIG.WORLD_WIDTH - W) / 2 + m,
+                maxX: (CONFIG.WORLD_WIDTH - W) / 2 - m,
+                minY: -(CONFIG.WORLD_HEIGHT - H) / 2 + m,
+                maxY: (CONFIG.WORLD_HEIGHT - H) / 2 - m
+            };
+        }
+
+        function toScreen(worldX, worldY) {
+            return { x: worldX + offsetX + W / 2, y: worldY + offsetY + H / 2 };
+        }
+
+        function updateCounter() {
+            countNumber.textContent = discoveries;
+            if (discoveries >= CONFIG.TOTAL_DISCOVERIES) {
+                countNumber.style.color = '#ffd700';
+                countNumber.style.textShadow = '0 0 20px #ffd700, 0 0 40px #ff8c00';
+                celebrateCompletion();
+            }
+        }
+
+        function showCometToast(songName) {
+            discoveryToast.textContent = `🎵 ¡Canción desbloqueada: ${songName}!`;
+            discoveryToast.classList.add('show');
+            if (navigator.vibrate) { navigator.vibrate([100, 50, 100]); }
+            setTimeout(() => { discoveryToast.classList.remove('show'); }, 3000);
+            
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    const note = document.createElement('span');
+                    note.classList.add('music-notes');
+                    note.textContent = pick(['🎵', '🎶', '🎼', '🎤', '🎧', '💿', '🎹', '🎸']);
+                    note.style.cssText = `left:${random(20,80)}%;top:${random(30,60)}%;animation-duration:${random(1.5,2.5)}s`;
+                    document.body.appendChild(note);
+                    setTimeout(() => note.remove(), 2500);
+                }, i * 80);
+            }
+        }
+
+        function showDiscoveryToast(name, type) {
+            const emoji = type === 'star' ? '⭐' : type === 'planet' ? '🪐' : type === 'dwarf' ? '🪨' : type === 'comet' ? '☄️' : '☀️';
+            discoveryToast.textContent = `${emoji} ¡Descubriste ${name}!`;
+            discoveryToast.classList.add('show');
+            if (navigator.vibrate) { navigator.vibrate(200); }
+            setTimeout(() => { discoveryToast.classList.remove('show'); }, 2500);
+        }
+
+        function celebrateCompletion() {
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const sparkle = document.createElement('span');
+                    sparkle.classList.add('sparkle');
+                    sparkle.textContent = pick(['🎉', '💖', '✨', '🌟', '💫', '💕', '🎊']);
+                    sparkle.style.cssText = `position:fixed;top:${Math.random()*100}%;left:${Math.random()*100}%;font-size:${random(1.5,3)}rem;z-index:2000;pointer-events:none;animation:sparkle-fly ${random(1.5,3)}s ease-out forwards;`;
+                    sparkle.style.setProperty('--tx', (Math.random() - 0.5) * 300 + 'px');
+                    sparkle.style.setProperty('--ty', (Math.random() - 0.5) * 300 + 'px');
+                    document.body.appendChild(sparkle);
+                    setTimeout(() => sparkle.remove(), 3000);
+                }, i * 40);
+            }
+        }
+
+        // Pantalla de bienvenida
+        for (let i = 0; i < 250; i++) {
+            const star = document.createElement('div');
+            star.classList.add('star-dot');
+            const size = random(1, 4.5);
+            Object.assign(star.style, { width: size + 'px', height: size + 'px', left: Math.random() * 100 + '%', top: Math.random() * 100 + '%', opacity: random(0.3, 1) });
+            star.style.setProperty('--duration', random(3, 7) + 's');
+            star.style.setProperty('--delay', Math.random() * 6 + 's');
+            welcomeStarsContainer.appendChild(star);
+        }
+
+        btnStart.addEventListener('click', () => {
+            const rect = btnStart.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+            for (let i = 0; i < 35; i++) {
+                const sparkle = document.createElement('span');
+                sparkle.classList.add('sparkle');
+                sparkle.textContent = pick(CONFIG.SPARKLE_EMOJIS);
+                sparkle.style.cssText = `left:${cx}px;top:${cy}px;animation-duration:${random(0.8,1.8)}s`;
+                sparkle.style.setProperty('--tx', (Math.random() - 0.5) * 350 + 'px');
+                sparkle.style.setProperty('--ty', (Math.random() - 0.5) * 350 + 'px');
+                document.body.appendChild(sparkle);
+                setTimeout(() => sparkle.remove(), 2000);
+            }
+            setTimeout(() => {
+                welcomeScreen.classList.add('hidden');
+                discoveryCounter.style.display = 'block';
+                fullscreenBtn.classList.add('visible');
+                musicStarted = true;
+                setTimeout(() => welcomeScreen.remove(), 1200);
+            }, 400);
+        });
+
+        // Crear estrellas
+        const specialStarIndices = new Set();
+        while (specialStarIndices.size < CONFIG.SPECIAL_STARS) {
+            specialStarIndices.add(Math.floor(Math.random() * CONFIG.NUM_STARS));
+        }
+        const specialStarMessages = {};
+        const shuffledMessages = [...STAR_MESSAGES].sort(() => Math.random() - 0.5);
+        let msgIdx = 0;
+        specialStarIndices.forEach(index => {
+            specialStarMessages[index] = shuffledMessages[msgIdx % shuffledMessages.length];
+            msgIdx++;
+        });
+        const stars = [];
+        for (let i = 0; i < CONFIG.NUM_STARS; i++) {
+            const t = Math.random();
+            const orbitRadius = CONFIG.MIN_ORBIT + (CONFIG.MAX_ORBIT - CONFIG.MIN_ORBIT) * (t * t);
+            const isSpecial = specialStarIndices.has(i);
+            let finalOrbitRadius = orbitRadius;
+            if (isSpecial && orbitRadius < 750) {
+                finalOrbitRadius = 750 + Math.random() * (CONFIG.MAX_ORBIT - 750);
+            }
+            stars.push({
+                orbitRadius: finalOrbitRadius,
+                angle: Math.random() * Math.PI * 2,
+                depthY: (Math.random() - 0.5) * 1000,
+                radius: isSpecial ? random(3.5, 5.5) : random(0.4, 3.2),
+                brightness: isSpecial ? random(0.8, 1) : Math.random(),
+                twinkleSpeed: isSpecial ? random(0.003, 0.005) : random(0.002, 0.008),
+                twinkleOffset: Math.random() * Math.PI * 2,
+                orbitalSpeed: random(0.00002, 0.00017) * CONFIG.ROMANTIC_SPEED,
+                color: isSpecial ? '#ffd4e8' : pick(CONFIG.STAR_COLORS),
+                isSpecial, message: isSpecial ? specialStarMessages[i] : null, id: i
+            });
+        }
+
+        // Crear planetas
+        const planets = [
+            { name: 'Mercurio', orbitRadius: 110, size: 9, color: '#c9c9c9', speed: 1.8, craters: true, rotationSpeed: 0.008, moons: [] },
+            { name: 'Venus',    orbitRadius: 165, size: 16, color: '#f5deb3', speed: 1.3, atmosphere: true, clouds: true, rotationSpeed: -0.006, moons: [] },
+            { name: 'Tierra',   orbitRadius: 225, size: 17, color: '#5cb8ff', speed: 1.0, atmosphere: true, continents: true, rotationSpeed: 0.05,
+              moons: [{ name: 'Luna', size: 5, distance: 28, color: '#e0e0e0', speed: 3.5, angle: 0 }] },
+            { name: 'Marte',    orbitRadius: 285, size: 12, color: '#e8755a', speed: 0.75, polarCaps: true, rotationSpeed: 0.048,
+              moons: [
+                  { name: 'Fobos', size: 2, distance: 18, color: '#c0b0a0', speed: 6, angle: 0 },
+                  { name: 'Deimos', size: 1.5, distance: 24, color: '#d0c0b0', speed: 4, angle: Math.PI / 2 }
+              ]},
+            { name: 'Júpiter',  orbitRadius: 450, size: 48, color: '#e8c99b', speed: 0.42, stripes: true, greatSpot: true, bands: true, atmosphere: true, rotationSpeed: 0.12,
+              faintRing: true,
+              moons: [
+                  { name: 'Ío', size: 4, distance: 60, color: '#ffdd60', speed: 5, angle: 0 },
+                  { name: 'Europa', size: 3.5, distance: 72, color: '#e8f0f8', speed: 4, angle: Math.PI / 3 },
+                  { name: 'Ganímedes', size: 5, distance: 85, color: '#d0d8e0', speed: 3, angle: Math.PI * 2/3 },
+                  { name: 'Calisto', size: 4.5, distance: 98, color: '#b0b8c0', speed: 2.5, angle: Math.PI },
+                  { name: 'Amaltea', size: 1.8, distance: 48, color: '#c89060', speed: 7, angle: Math.PI * 1.5 }
+              ]},
+            { name: 'Saturno',  orbitRadius: 560, size: 38, color: '#f0e2b0', speed: 0.3, bands: true, rotationSpeed: 0.1,
+              ring: { inner: 46, outer: 65, inner2: 42, outer2: 44, color: '#e8d8a8' },
+              moons: [
+                  { name: 'Titán', size: 5, distance: 55, color: '#e8c060', speed: 2, angle: 0 },
+                  { name: 'Encélado', size: 2, distance: 45, color: '#f8f8ff', speed: 4, angle: Math.PI / 2 },
+                  { name: 'Mimas', size: 1.8, distance: 35, color: '#e0e0e0', speed: 5, angle: Math.PI * 1.5 },
+                  { name: 'Jápeto', size: 2.5, distance: 65, color: '#a09080', speed: 1.5, angle: Math.PI / 3 }
+              ]},
+            { name: 'Urano',    orbitRadius: 670, size: 24, color: '#8fd4e8', speed: 0.21, atmosphere: true, faintRing: true, rotationSpeed: -0.07,
+              moons: [
+                  { name: 'Titania', size: 3, distance: 35, color: '#c8d8e8', speed: 2.5, angle: 0 },
+                  { name: 'Oberón', size: 3, distance: 42, color: '#b8c8d8', speed: 2, angle: Math.PI / 2 },
+                  { name: 'Miranda', size: 1.8, distance: 28, color: '#d0d8e0', speed: 3, angle: Math.PI / 3 },
+                  { name: 'Ariel', size: 2.2, distance: 32, color: '#e0e8f0', speed: 2.8, angle: Math.PI * 2/3 }
+              ]},
+            { name: 'Neptuno',  orbitRadius: 770, size: 22, color: '#5b80e8', speed: 0.17, atmosphere: true, darkSpot: true, rotationSpeed: 0.09,
+              faintRing: true,
+              moons: [
+                  { name: 'Tritón', size: 4, distance: 38, color: '#d8e8f8', speed: -3, angle: 0 },
+                  { name: 'Proteo', size: 2, distance: 30, color: '#b0b8c0', speed: 3.5, angle: Math.PI / 3 }
+              ]}
+        ];
+        planets.forEach(planet => {
+            planet.speed *= CONFIG.ROMANTIC_SPEED;
+            planet.angle = Math.random() * Math.PI * 2;
+            planet.rotationAngle = Math.random() * Math.PI * 2;
+            planet.x = 0; planet.y = 0;
+            if (planet.moons) {
+                planet.moons.forEach(moon => {
+                    moon.angle = moon.angle || Math.random() * Math.PI * 2;
+                });
+            }
+        });
+
+        // Crear planetoides
+        const dwarfPlanets = [];
+        for (const [name, data] of Object.entries(DWARF_PLANET_DATA)) {
+            const dp = {
+                name, orbitRadius: data.orbitRadius, size: data.size, color: data.color,
+                speed: data.speed * CONFIG.ROMANTIC_SPEED,
+                angle: Math.random() * Math.PI * 2, rotationAngle: Math.random() * Math.PI * 2,
+                x: 0, y: 0, rotationSpeed: random(0.005, 0.02),
+                elongated: data.elongated || false,
+                image: data.image, emoji: data.emoji
+            };
+            if (data.moon) {
+                dp.moon = {
+                    name: data.moon.name,
+                    size: data.moon.size,
+                    distance: data.moon.distance,
+                    color: data.moon.color,
+                    speed: data.moon.speed,
+                    angle: data.moon.angle || Math.random() * Math.PI * 2
+                };
+            }
+            dwarfPlanets.push(dp);
+        }
+
+        const sun = { name: 'Sol', x: 0, y: 0, radius: 65, glow: 110, pulse: 0 };
+
+        // Cinturón de asteroides
+        const asteroids = [];
+        for (let i = 0; i < CONFIG.MAX_ASTEROIDS; i++) {
+            const orbitRadius = random(CONFIG.ASTEROID_BELT_INNER, CONFIG.ASTEROID_BELT_OUTER);
+            asteroids.push({
+                orbitRadius, angle: Math.random() * Math.PI * 2,
+                speed: random(0.0003, 0.0015) * CONFIG.ROMANTIC_SPEED,
+                size: random(1.2, 4),
+                color: pick(['#b0a090', '#c8b8a0', '#a89880', '#d0c0b0', '#c0b0a0', '#b8a890', '#d4c4b4', '#a09080']),
+                irregularity: random(0.5, 0.9),
+                rotationSpeed: random(0.005, 0.02),
+                rotationAngle: Math.random() * Math.PI * 2
+            });
+        }
+
+        // Cinturón de Kuiper
+        const kuiperObjects = [];
+        for (let i = 0; i < CONFIG.MAX_KUIPER_OBJECTS; i++) {
+            const orbitRadius = random(CONFIG.KUIPER_BELT_INNER, CONFIG.KUIPER_BELT_OUTER);
+            kuiperObjects.push({
+                orbitRadius,
+                angle: Math.random() * Math.PI * 2,
+                speed: random(0.0001, 0.0003) * CONFIG.ROMANTIC_SPEED,
+                size: random(1, 4),
+                color: pick(['#d0e8f0', '#c0d8e8', '#b0c8e0', '#e0f0f8', '#c8dde8', '#b8d0e0', '#d8e8f0', '#c0d8e0', '#e8f0f8', '#d0e0f0']),
+                isIcy: Math.random() > 0.2,
+                irregularity: random(0.4, 0.9),
+                rotationSpeed: random(0.003, 0.015),
+                rotationAngle: Math.random() * Math.PI * 2,
+                glitter: Math.random() > 0.5
+            });
+        }
+
+        const nebulae = [];
+        for (let i = 0; i < 12; i++) {
+            nebulae.push({
+                x: (Math.random() - 0.5) * CONFIG.WORLD_WIDTH * 0.9,
+                y: (Math.random() - 0.5) * CONFIG.WORLD_HEIGHT * 0.9,
+                radius: random(200, 550),
+                color: pick(CONFIG.NEBULA_COLORS),
+                pulseSpeed: random(0.0008, 0.0028)
+            });
+        }
+
+        // Explosiones
+        const explosions = [];
+        function createExplosion(x, y, color, size) {
+            const numParticles = random(25, 50);
+            const particles = [];
+            for (let i = 0; i < numParticles; i++) {
+                const angle = random(0, Math.PI * 2), speed = random(0.5, 4);
+                particles.push({
+                    x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                    radius: random(0.5, 3),
+                    color: pick(['#ffffff', color, '#ffd4e8', '#ffeb3b', '#ff9800']),
+                    life: 1, decay: random(0.01, 0.04)
+                });
+            }
+            explosions.push({ particles, x, y });
+        }
+        function updateExplosions() {
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                const explosion = explosions[i]; let allDead = true;
+                explosion.particles.forEach(p => {
+                    p.x += p.vx; p.y += p.vy; p.vx *= 0.99; p.vy *= 0.99; p.life -= p.decay;
+                    if (p.life > 0) allDead = false;
+                });
+                if (allDead || explosion.particles.length === 0) explosions.splice(i, 1);
+            }
+        }
+        function drawExplosions() {
+            explosions.forEach(explosion => {
+                explosion.particles.forEach(p => {
+                    if (p.life <= 0) return;
+                    const screen = toScreen(p.x, p.y);
+                    ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+                    ctx.beginPath(); ctx.arc(screen.x, screen.y, p.radius, 0, Math.PI * 2); ctx.fill();
+                    if (p.life > 0.5) {
+                        ctx.fillStyle = 'rgba(255,255,255,' + (p.life * 0.6) + ')';
+                        ctx.beginPath(); ctx.arc(screen.x, screen.y, p.radius * 2.5, 0, Math.PI * 2); ctx.fill();
+                    }
+                });
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        // Estrellas fugaces
+        const shootingStars = [];
+        const heartParticles = [];
+        
+        function spawnShootingStar() {
+            if (shootingStars.length >= CONFIG.MAX_SHOOTING_STARS) return;
+            const startX = W + 200;
+            const startY = random(50, H - 50);
+            const angle = random(Math.PI * 0.6, Math.PI * 0.9);
+            const speed = random(6, 12);
+            const length = random(50, 120);
+            shootingStars.push({
+                x: startX, y: startY,
+                vx: -Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                angle: Math.PI - angle,
+                length, life: 1, alpha: random(0.7, 1),
+                color: pick(['#ffffff', '#ffd4e8', '#d4e8ff', '#fff8d4', '#ffd4f0'])
+            });
+        }
+
+        function createHeartExplosion(x, y) {
+            const colors = ['#ff6b9d', '#ff8db5', '#ffb8d4', '#ff4477', '#ffd4e8', '#ffffff'];
+            for (let i = 0; i < 30; i++) {
+                const angle = random(0, Math.PI * 2);
+                const speed = random(0.3, 2.5);
+                const heartScale = random(0.5, 1.5);
+                heartParticles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                    size: heartScale, color: pick(colors),
+                    life: 1, decay: random(0.008, 0.025),
+                    rotation: random(0, Math.PI * 2), rotationSpeed: random(-0.05, 0.05)
+                });
+            }
+        }
+
+        function updateShootingStars() {
+            if (Math.random() < 0.008) { spawnShootingStar(); }
+            for (let i = shootingStars.length - 1; i >= 0; i--) {
+                const ss = shootingStars[i];
+                ss.x += ss.vx; ss.y += ss.vy; ss.life -= 0.003;
+                if (ss.life <= 0 || ss.x < -200 || ss.y > H + 200 || ss.y < -200) {
+                    if (ss.life > 0 && ss.x < W) {
+                        createHeartExplosion(ss.x, ss.y);
+                    }
+                    shootingStars.splice(i, 1);
+                }
+            }
+            for (let i = heartParticles.length - 1; i >= 0; i--) {
+                const hp = heartParticles[i];
+                hp.x += hp.vx; hp.y += hp.vy;
+                hp.vx *= 0.98; hp.vy *= 0.98;
+                hp.life -= hp.decay; hp.rotation += hp.rotationSpeed;
+                if (hp.life <= 0) { heartParticles.splice(i, 1); }
+            }
+        }
+
+        function drawHeart(ctx, x, y, size, color, alpha, rotation) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = color;
+            ctx.translate(x, y);
+            ctx.rotate(rotation);
+            ctx.scale(size, size);
+            ctx.beginPath();
+            ctx.moveTo(0, -1.5);
+            ctx.bezierCurveTo(-2, -3, -4, -0.5, 0, 2.5);
+            ctx.bezierCurveTo(4, -0.5, 2, -3, 0, -1.5);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawShootingStars() {
+            shootingStars.forEach(ss => {
+                const gradient = ctx.createLinearGradient(
+                    ss.x, ss.y,
+                    ss.x + Math.cos(ss.angle) * ss.length,
+                    ss.y - Math.sin(ss.angle) * ss.length
+                );
+                gradient.addColorStop(0, 'rgba(255,255,255,' + ss.alpha + ')');
+                gradient.addColorStop(0.3, ss.color.replace(')', ',0.8)').replace('rgb', 'rgba'));
+                gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(ss.x, ss.y);
+                ctx.lineTo(ss.x + Math.cos(ss.angle) * ss.length, ss.y - Math.sin(ss.angle) * ss.length);
+                ctx.stroke();
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath(); ctx.arc(ss.x, ss.y, 2.5, 0, Math.PI * 2); ctx.fill();
+            });
+            heartParticles.forEach(hp => {
+                drawHeart(ctx, hp.x, hp.y, hp.size, hp.color, hp.life, hp.rotation);
+            });
+        }
+
+        // Cometas (SIN CAMBIOS VISUALES)
+        const comets = [];
+        function getCometColors(scheme) {
+            switch(scheme) {
+                case 'purple': return { head: '#d4a0ff', tail1: 'rgba(180,100,255,', tail2: 'rgba(120,40,220,' };
+                case 'red':    return { head: '#ff6b6b', tail1: 'rgba(255,80,80,', tail2: 'rgba(200,30,30,' };
+                case 'blue':   return { head: '#6bb5ff', tail1: 'rgba(80,150,255,', tail2: 'rgba(30,80,220,' };
+                case 'pink':   return { head: '#ff8ec4', tail1: 'rgba(255,130,180,', tail2: 'rgba(220,60,140,' };
+                default:       return { head: '#d4a0ff', tail1: 'rgba(180,100,255,', tail2: 'rgba(120,40,220,' };
+            }
+        }
+        function spawnComet() {
+            if (comets.length >= CONFIG.MAX_COMETS) return;
+            const side = Math.floor(Math.random() * 4);
+            let startX, startY;
+            const worldW = CONFIG.WORLD_WIDTH / 2, worldH = CONFIG.WORLD_HEIGHT / 2, margin = 300;
+            switch(side) {
+                case 0: startX = random(-worldW, worldW); startY = -worldH - margin; break;
+                case 1: startX = worldW + margin; startY = random(-worldH, worldH); break;
+                case 2: startX = random(-worldW, worldW); startY = worldH + margin; break;
+                case 3: startX = -worldW - margin; startY = random(-worldH, worldH); break;
+            }
+            const targetX = random(-200, 200), targetY = random(-200, 200);
+            const dx = targetX - startX, dy = targetY - startY;
+            const dist = Math.sqrt(dx * dx + dy * dy), speed = random(1.5, 4);
+            const colorScheme = pick(CONFIG.COMET_COLORS);
+            const colors = getCometColors(colorScheme);
+            const cometId = 'comet_' + Date.now() + Math.random();
+            comets.push({
+                id: cometId, x: startX, y: startY,
+                vx: (dx / dist) * speed, vy: (dy / dist) * speed,
+                angle: Math.atan2(dy, dx), size: random(3, 6), tailLength: random(80, 180),
+                headColor: colors.head, tailColor1: colors.tail1, tailColor2: colors.tail2,
+                colorScheme, particles: [], alive: true
+            });
+        }
+        function checkCometCollisions() {
+            for (let i = comets.length - 1; i >= 0; i--) {
+                const comet = comets[i]; if (!comet.alive) continue;
+                const distToSun = Math.hypot(comet.x - sun.x, comet.y - sun.y);
+                if (distToSun < sun.radius + comet.size * 4) { createExplosion(comet.x, comet.y, '#ffaa00', 3); comets.splice(i, 1); continue; }
+                let collided = false;
+                for (const planet of planets) {
+                    const distToPlanet = Math.hypot(comet.x - planet.x, comet.y - planet.y);
+                    if (distToPlanet < planet.size + comet.size * 3) { createExplosion(comet.x, comet.y, planet.color, 2); comets.splice(i, 1); collided = true; break; }
+                }
+                if (collided) continue;
+                for (let j = i + 1; j < comets.length; j++) {
+                    const otherComet = comets[j]; if (!otherComet.alive) continue;
+                    const distBetween = Math.hypot(comet.x - otherComet.x, comet.y - otherComet.y);
+                    if (distBetween < (comet.size + otherComet.size) * 4) {
+                        const midX = (comet.x + otherComet.x) / 2, midY = (comet.y + otherComet.y) / 2;
+                        const mixedColor = Math.random() < 0.5 ? comet.headColor : otherComet.headColor;
+                        createExplosion(midX, midY, mixedColor, 2.5); comets.splice(j, 1); comets.splice(i, 1); break;
+                    }
+                }
+            }
+        }
+        function updateComets() {
+            if (Math.random() < 0.003 && comets.length < CONFIG.MAX_COMETS) { spawnComet(); }
+            for (let i = comets.length - 1; i >= 0; i--) {
+                const comet = comets[i]; if (!comet.alive) continue;
+                comet.x += comet.vx; comet.y += comet.vy;
+                if (Math.random() < 0.7) {
+                    comet.particles.push({
+                        x: comet.x - Math.cos(comet.angle) * random(5, comet.tailLength * 0.8),
+                        y: comet.y - Math.sin(comet.angle) * random(5, comet.tailLength * 0.8),
+                        radius: random(0.5, 2), alpha: random(0.4, 0.9), life: 1
+                    });
+                }
+                for (let j = comet.particles.length - 1; j >= 0; j--) {
+                    comet.particles[j].life -= 0.015; comet.particles[j].alpha *= 0.98;
+                    if (comet.particles[j].life <= 0) { comet.particles.splice(j, 1); }
+                }
+                if (comet.particles.length > 200) { comet.particles.splice(0, comet.particles.length - 200); }
+                const worldW = CONFIG.WORLD_WIDTH / 2 + 600, worldH = CONFIG.WORLD_HEIGHT / 2 + 600;
+                if (Math.abs(comet.x) > worldW || Math.abs(comet.y) > worldH) { comets.splice(i, 1); }
+            }
+            checkCometCollisions();
+        }
+        function drawComets() {
+            comets.forEach(comet => {
+                if (!comet.alive) return;
+                const screen = toScreen(comet.x, comet.y);
+                comet.particles.forEach(particle => {
+                    const particleScreen = toScreen(particle.x, particle.y);
+                    ctx.fillStyle = comet.tailColor1 + (particle.alpha * 0.6) + ')';
+                    ctx.beginPath(); ctx.arc(particleScreen.x, particleScreen.y, particle.radius, 0, Math.PI * 2); ctx.fill();
+                });
+                if (!discoveredComets.has(comet.id)) { ctx.shadowColor = 'rgba(255,255,255,0.8)'; ctx.shadowBlur = 20; }
+                const tailGradient = ctx.createLinearGradient(screen.x, screen.y, screen.x - Math.cos(comet.angle) * comet.tailLength, screen.y - Math.sin(comet.angle) * comet.tailLength);
+                tailGradient.addColorStop(0, 'rgba(255,255,255,0.9)'); tailGradient.addColorStop(0.05, comet.headColor);
+                tailGradient.addColorStop(0.3, comet.tailColor1 + '0.7)'); tailGradient.addColorStop(0.7, comet.tailColor2 + '0.3)');
+                tailGradient.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.strokeStyle = tailGradient; ctx.lineWidth = comet.size * 2; ctx.lineCap = 'round';
+                ctx.beginPath(); ctx.moveTo(screen.x, screen.y);
+                ctx.lineTo(screen.x - Math.cos(comet.angle) * comet.tailLength, screen.y - Math.sin(comet.angle) * comet.tailLength); ctx.stroke();
+                const innerTailGradient = ctx.createLinearGradient(screen.x, screen.y, screen.x - Math.cos(comet.angle) * comet.tailLength * 0.5, screen.y - Math.sin(comet.angle) * comet.tailLength * 0.5);
+                innerTailGradient.addColorStop(0, 'rgba(255,255,255,1)'); innerTailGradient.addColorStop(0.5, comet.tailColor1 + '0.8)');
+                innerTailGradient.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.strokeStyle = innerTailGradient; ctx.lineWidth = comet.size * 0.7;
+                ctx.beginPath(); ctx.moveTo(screen.x, screen.y);
+                ctx.lineTo(screen.x - Math.cos(comet.angle) * comet.tailLength * 0.5, screen.y - Math.sin(comet.angle) * comet.tailLength * 0.5); ctx.stroke();
+                const headGradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, comet.size * 4);
+                headGradient.addColorStop(0, 'rgba(255,255,255,1)'); headGradient.addColorStop(0.2, comet.headColor);
+                headGradient.addColorStop(0.5, comet.tailColor1 + '0.6)'); headGradient.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = headGradient;
+                ctx.beginPath(); ctx.arc(screen.x, screen.y, comet.size * 4, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath(); ctx.arc(screen.x, screen.y, comet.size * 0.8, 0, Math.PI * 2); ctx.fill();
+                ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+            });
+        }
+
+        function drawNebulae() {
+            nebulae.forEach(nebula => {
+                const screen = toScreen(nebula.x, nebula.y);
+                const alpha = Math.sin(globalTime * nebula.pulseSpeed) * 0.3 + 0.7;
+                const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, nebula.radius);
+                const baseColor = nebula.color.match(/[\d.]+(?=\))/)[0];
+                const newAlpha = (parseFloat(baseColor) * alpha).toFixed(4);
+                const adjustedColor = nebula.color.replace(/[\d.]+(?=\))/, newAlpha);
+                gradient.addColorStop(0, adjustedColor); gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.beginPath(); ctx.arc(screen.x, screen.y, nebula.radius, 0, Math.PI * 2); ctx.fill();
+            });
+        }
+
+        function drawStars() {
+            stars.forEach(star => {
+                const screenX = Math.cos(star.angle) * star.orbitRadius + offsetX + W / 2;
+                const screenY = Math.sin(star.angle) * star.orbitRadius + offsetY + H / 2;
+                const depthFactor = 1 - (star.depthY / 1200) * 0.4;
+                const twinkle = Math.sin(globalTime * star.twinkleSpeed * 1000 + star.twinkleOffset) * 0.3 + 0.7;
+                const alpha = star.brightness * twinkle * depthFactor;
+                const radius = star.radius * depthFactor;
+                const isDiscovered = discoveredStars.has(star.id);
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = isDiscovered ? pick(CONFIG.STAR_COLORS) : star.color;
+                ctx.beginPath(); ctx.arc(screenX, screenY, radius, 0, Math.PI * 2); ctx.fill();
+                if (star.isSpecial && !isDiscovered) {
+                    ctx.globalAlpha = alpha * 0.5;
+                    const auraGradient = ctx.createRadialGradient(screenX, screenY, radius * 0.5, screenX, screenY, radius * 8);
+                    auraGradient.addColorStop(0, 'rgba(255,180,220,0.8)'); auraGradient.addColorStop(0.5, 'rgba(255,150,200,0.3)');
+                    auraGradient.addColorStop(1, 'transparent');
+                    ctx.fillStyle = auraGradient;
+                    ctx.beginPath(); ctx.arc(screenX, screenY, radius * 8, 0, Math.PI * 2); ctx.fill();
+                    ctx.globalAlpha = alpha * 0.7; ctx.strokeStyle = '#ffd4e8'; ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(screenX - radius * 10, screenY); ctx.lineTo(screenX + radius * 10, screenY);
+                    ctx.moveTo(screenX, screenY - radius * 10); ctx.lineTo(screenX, screenY + radius * 10);
+                    ctx.stroke();
+                }
+                if (!star.isSpecial && star.brightness > 0.65 && twinkle > 0.82) {
+                    ctx.globalAlpha = alpha * 0.4;
+                    const glowGradient = ctx.createRadialGradient(screenX, screenY, radius * 0.5, screenX, screenY, radius * 6);
+                    glowGradient.addColorStop(0, star.color); glowGradient.addColorStop(1, 'transparent');
+                    ctx.fillStyle = glowGradient;
+                    ctx.beginPath(); ctx.arc(screenX, screenY, radius * 6, 0, Math.PI * 2); ctx.fill();
+                }
+                if (!star.isSpecial && !isDiscovered && star.brightness > 0.85 && twinkle > 0.9) {
+                    ctx.globalAlpha = alpha * 0.6; ctx.strokeStyle = star.color; ctx.lineWidth = 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(screenX - radius * 8, screenY); ctx.lineTo(screenX + radius * 8, screenY);
+                    ctx.moveTo(screenX, screenY - radius * 8); ctx.lineTo(screenX, screenY + radius * 8);
+                    ctx.stroke();
+                }
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function drawKuiperBelt() {
+            kuiperObjects.forEach(obj => {
+                const worldX = Math.cos(obj.angle) * obj.orbitRadius;
+                const worldY = Math.sin(obj.angle) * obj.orbitRadius;
+                const screen = toScreen(worldX, worldY);
+                const s = obj.size;
+                
+                ctx.save();
+                ctx.translate(screen.x, screen.y);
+                ctx.rotate(obj.rotationAngle);
+                
+                if (obj.glitter) {
+                    ctx.shadowColor = 'rgba(180,220,255,0.8)';
+                    ctx.shadowBlur = 6;
+                }
+                
+                ctx.fillStyle = obj.color;
+                ctx.beginPath();
+                const points = 5 + Math.floor(obj.irregularity * 4);
+                for (let i = 0; i < points; i++) {
+                    const angle = (i / points) * Math.PI * 2;
+                    const r = s * (0.5 + obj.irregularity * 0.7);
+                    const px = Math.cos(angle) * r;
+                    const py = Math.sin(angle) * r;
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                ctx.fill();
+                
+                if (obj.isIcy) {
+                    ctx.fillStyle = 'rgba(200,230,255,0.4)';
+                    ctx.beginPath();
+                    ctx.arc(s * 0.1, -s * 0.1, s * 0.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.restore();
+            });
+        }
+
+        function drawAsteroidBelt() {
+            asteroids.forEach(asteroid => {
+                const worldX = Math.cos(asteroid.angle) * asteroid.orbitRadius;
+                const worldY = Math.sin(asteroid.angle) * asteroid.orbitRadius;
+                const screen = toScreen(worldX, worldY);
+                const s = asteroid.size;
+                ctx.save(); ctx.translate(screen.x, screen.y); ctx.rotate(asteroid.rotationAngle);
+                ctx.fillStyle = asteroid.color; ctx.beginPath();
+                const points = 5 + Math.floor(asteroid.irregularity * 4);
+                for (let i = 0; i < points; i++) {
+                    const angle = (i / points) * Math.PI * 2, r = s * (0.5 + asteroid.irregularity * 0.7);
+                    const px = Math.cos(angle) * r, py = Math.sin(angle) * r;
+                    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                }
+                ctx.closePath(); ctx.fill();
+                ctx.fillStyle = 'rgba(0,0,0,0.25)';
+                ctx.beginPath(); ctx.arc(s * 0.15, -s * 0.15, s * 0.4, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            });
+        }
+
+        function drawOrbits() {
+            const sunScreen = toScreen(0, 0);
+            
+            ctx.strokeStyle = 'rgba(255,200,220,0.06)'; ctx.lineWidth = 1.2; ctx.setLineDash([8, 35]);
+            planets.forEach(planet => {
+                ctx.beginPath(); ctx.arc(sunScreen.x, sunScreen.y, planet.orbitRadius, 0, Math.PI * 2); ctx.stroke();
+            });
+            
+            dwarfPlanets.forEach(dp => {
+                ctx.strokeStyle = 'rgba(200,200,220,0.04)';
+                ctx.beginPath(); ctx.arc(sunScreen.x, sunScreen.y, dp.orbitRadius, 0, Math.PI * 2); ctx.stroke();
+            });
+            
+            ctx.strokeStyle = 'rgba(200,180,160,0.1)';
+            ctx.lineWidth = (CONFIG.ASTEROID_BELT_OUTER - CONFIG.ASTEROID_BELT_INNER);
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.arc(sunScreen.x, sunScreen.y, (CONFIG.ASTEROID_BELT_INNER + CONFIG.ASTEROID_BELT_OUTER) / 2, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.strokeStyle = 'rgba(150,200,230,0.07)';
+            ctx.lineWidth = (CONFIG.KUIPER_BELT_OUTER - CONFIG.KUIPER_BELT_INNER);
+            ctx.beginPath();
+            ctx.arc(sunScreen.x, sunScreen.y, (CONFIG.KUIPER_BELT_INNER + CONFIG.KUIPER_BELT_OUTER) / 2, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.setLineDash([]);
+        }
+
+        function drawSun() {
+            const screen = toScreen(0, 0); sun.pulse += 0.01;
+            const pulseScale = 1 + Math.sin(sun.pulse) * 0.07;
+            const r = sun.radius * pulseScale;
+            const glowLayers = [
+                { radius: sun.glow * 4, color: 'rgba(255,160,80,0.2)' },
+                { radius: sun.glow * 2.8, color: 'rgba(255,180,80,0.35)' },
+                { radius: sun.glow * 1.8, color: 'rgba(255,200,70,0.5)' },
+                { radius: sun.glow * 1.1, color: 'rgba(255,220,100,0.7)' }
+            ];
+            glowLayers.forEach(layer => {
+                const gradient = ctx.createRadialGradient(screen.x, screen.y, r * 0.8, screen.x, screen.y, layer.radius);
+                gradient.addColorStop(0, layer.color);
+                gradient.addColorStop(0.5, layer.color.replace(/[\d.]+\)$/, m => (parseFloat(m) * 0.4).toFixed(2) + ')'));
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.beginPath(); ctx.arc(screen.x, screen.y, layer.radius, 0, Math.PI * 2); ctx.fill();
+            });
+            const sunGradient = ctx.createRadialGradient(screen.x - 10, screen.y - 10, r * 0.05, screen.x, screen.y, r);
+            sunGradient.addColorStop(0, '#fffef5'); sunGradient.addColorStop(0.3, '#ffe89a');
+            sunGradient.addColorStop(0.6, '#ffb840'); sunGradient.addColorStop(0.85, '#ff7020');
+            sunGradient.addColorStop(1, '#d04010');
+            ctx.fillStyle = sunGradient;
+            ctx.beginPath(); ctx.arc(screen.x, screen.y, r, 0, Math.PI * 2); ctx.fill();
+            const flareGradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, r * 0.35);
+            flareGradient.addColorStop(0, 'rgba(255,255,255,0.95)');
+            flareGradient.addColorStop(0.3, 'rgba(255,255,220,0.6)'); flareGradient.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = flareGradient;
+            ctx.beginPath(); ctx.arc(screen.x, screen.y, r * 0.3, 0, Math.PI * 2); ctx.fill();
+        }
+
+        function drawPlanet(planet) {
+            const screen = toScreen(planet.x, planet.y);
+            const s = planet.size;
+            ctx.save(); ctx.translate(screen.x, screen.y);
+            if (planet.name === 'Urano') { ctx.rotate(planet.rotationAngle); ctx.scale(0.7, 1); }
+            else if (planet.name === 'Venus') { ctx.rotate(-planet.rotationAngle); }
+            else { ctx.rotate(planet.rotationAngle); }
+            if (planet.atmosphere) {
+                let atmMult = 1.6, atmAlpha = 0.3;
+                if (planet.name === 'Júpiter') { atmMult = 2.2; atmAlpha = 0.4; }
+                else if (planet.name === 'Urano' || planet.name === 'Neptuno') { atmMult = 1.9; atmAlpha = 0.35; }
+                const atmoGradient = ctx.createRadialGradient(0, 0, s * 0.8, 0, 0, s * atmMult);
+                atmoGradient.addColorStop(0, 'transparent');
+                atmoGradient.addColorStop(0.5, planet.color.replace(')', `,${atmAlpha})`));
+                atmoGradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = atmoGradient;
+                ctx.beginPath(); ctx.arc(0, 0, s * atmMult, 0, Math.PI * 2); ctx.fill();
+            }
+            const shadowGradient = ctx.createRadialGradient(-s * 0.3, -s * 0.3, s * 0.03, 0, 0, s);
+            shadowGradient.addColorStop(0, planet.color); shadowGradient.addColorStop(0.6, planet.color);
+            shadowGradient.addColorStop(1, 'rgba(0,0,0,0.6)');
+            ctx.fillStyle = shadowGradient;
+            ctx.beginPath(); ctx.arc(0, 0, s, 0, Math.PI * 2); ctx.fill();
+            if (planet.craters) {
+                const craters = [{ dx: -3, dy: -2, r: 1.5 }, { dx: 4, dy: 3, r: 1.2 }, { dx: -5, dy: 4, r: 1 }, { dx: 2, dy: -4, r: 1.8 }, { dx: 0, dy: 0, r: 1.3 }, { dx: -6, dy: -3, r: 0.8 }];
+                craters.forEach(c => {
+                    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.arc(c.dx, c.dy, c.r, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.beginPath(); ctx.arc(c.dx - 0.3, c.dy - 0.3, c.r * 0.6, 0, Math.PI * 2); ctx.fill();
+                });
+            }
+            if (planet.clouds) {
+                ctx.save(); ctx.beginPath(); ctx.arc(0, 0, s, 0, Math.PI*2); ctx.clip();
+                for (let i = 0; i < 8; i++) {
+                    ctx.fillStyle = 'rgba(255,255,240,0.12)'; ctx.beginPath();
+                    ctx.arc((Math.random()-0.5)*s*1.8, (Math.random()-0.5)*s*1.8, random(s*0.2, s*0.7), 0, Math.PI*2); ctx.fill();
+                }
+                ctx.restore();
+            }
+            if (planet.continents) {
+                ctx.save(); ctx.beginPath(); ctx.arc(0, 0, s, 0, Math.PI*2); ctx.clip();
+                const lands = [{ cx: -s*0.3, cy: -s*0.1, rx: s*0.4, ry: s*0.5 }, { cx: s*0.2, cy: s*0.1, rx: s*0.3, ry: s*0.35 }, { cx: s*0.4, cy: -s*0.4, rx: s*0.25, ry: s*0.3 }, { cx: -s*0.1, cy: s*0.5, rx: s*0.2, ry: s*0.25 }];
+                lands.forEach(l => { ctx.fillStyle = 'rgba(80,180,80,0.7)'; ctx.beginPath(); ctx.ellipse(l.cx, l.cy, l.rx, l.ry, Math.random()*0.5, 0, Math.PI*2); ctx.fill(); });
+                ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.arc(0, -s*0.8, s*0.35, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(0, s*0.8, s*0.3, 0, Math.PI*2); ctx.fill();
+                ctx.restore();
+            }
+            if (planet.polarCaps) {
+                ctx.fillStyle = 'rgba(255,255,250,0.5)'; ctx.beginPath(); ctx.arc(0, -s*0.75, s*0.3, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(0, s*0.75, s*0.25, 0, Math.PI*2); ctx.fill();
+            }
+            if (planet.bands || planet.stripes) {
+                ctx.save(); ctx.beginPath(); ctx.arc(0, 0, s, 0, Math.PI*2); ctx.clip();
+                const numBands = planet.stripes ? 14 : 8; const bh = (s*2)/numBands;
+                for (let i = -s; i < s; i += bh) {
+                    const a = 0.06 + Math.abs(Math.sin(i*0.2))*0.25;
+                    const hue = (i % (bh*2) < bh) ? '200,140,80' : '240,200,150';
+                    ctx.fillStyle = `rgba(${hue},${a})`; ctx.fillRect(-s, i, s*2, bh);
+                }
+                if (planet.greatSpot) {
+                    const sg = ctx.createRadialGradient(s*0.35, -s*0.15, 0, s*0.35, -s*0.15, s*0.3);
+                    sg.addColorStop(0, 'rgba(230,110,70,0.85)'); sg.addColorStop(0.4, 'rgba(210,90,50,0.6)');
+                    sg.addColorStop(0.7, 'rgba(190,70,40,0.3)'); sg.addColorStop(1, 'rgba(180,60,40,0)');
+                    ctx.fillStyle = sg; ctx.beginPath(); ctx.ellipse(s*0.35, -s*0.15, s*0.3, s*0.18, 0.15, 0, Math.PI*2); ctx.fill();
+                }
+                ctx.restore();
+            }
+            ctx.restore();
+            if (planet.moons && planet.moons.length > 0) {
+                planet.moons.forEach(moon => {
+                    moon.angle += moon.speed * 0.001;
+                    const mx = screen.x + Math.cos(moon.angle) * moon.distance;
+                    const my = screen.y + Math.sin(moon.angle) * moon.distance;
+                    const ms = moon.size;
+                    const mg = ctx.createRadialGradient(mx, my, ms*0.3, mx, my, ms*2.5);
+                    mg.addColorStop(0, 'rgba(255,255,245,0.35)'); mg.addColorStop(1, 'transparent');
+                    ctx.fillStyle = mg;
+                    ctx.beginPath(); ctx.arc(mx, my, ms*2.5, 0, Math.PI*2); ctx.fill();
+                    const msh = ctx.createRadialGradient(mx-ms*0.2, my-ms*0.2, 0.2, mx, my, ms);
+                    msh.addColorStop(0, moon.color); msh.addColorStop(0.5, moon.color); msh.addColorStop(1, '#666');
+                    ctx.fillStyle = msh;
+                    ctx.beginPath(); ctx.arc(mx, my, ms, 0, Math.PI*2); ctx.fill();
+                });
+            }
+            ctx.save(); ctx.translate(screen.x, screen.y);
+            if (planet.ring) {
+                const rings = [
+                    { outer: planet.ring.outer, inner: planet.ring.inner, color: planet.ring.color, w: 5, a: 0.75 },
+                    { outer: planet.ring.outer+5, inner: planet.ring.inner+4, color: 'rgba(240,225,185,0.45)', w: 8, a: 0.4 },
+                    { outer: planet.ring.outer-3, inner: planet.ring.inner+3, color: 'rgba(220,200,160,0.55)', w: 2, a: 0.55 },
+                    { outer: planet.ring.outer2||planet.ring.outer-8, inner: planet.ring.inner2||planet.ring.inner+8, color: 'rgba(200,180,140,0.4)', w: 3, a: 0.35 }
+                ];
+                rings.forEach(r => { ctx.strokeStyle = r.color; ctx.lineWidth = r.w; ctx.globalAlpha = r.a; ctx.beginPath(); ctx.ellipse(0, 0, r.outer, r.inner, -0.35, 0, Math.PI*2); ctx.stroke(); });
+            }
+            if (planet.faintRing) { 
+                ctx.strokeStyle = 'rgba(180,220,240,0.2)'; ctx.lineWidth = 2; ctx.globalAlpha = 0.4; 
+                ctx.beginPath(); ctx.ellipse(0, 0, s*1.6, s*1.4, -0.1, 0, Math.PI*2); ctx.stroke(); 
+            }
+            if (planet.darkSpot) {
+                const ds = ctx.createRadialGradient(s*0.2, s*0.1, 0, s*0.2, s*0.1, s*0.25);
+                ds.addColorStop(0, 'rgba(30,50,120,0.7)'); ds.addColorStop(0.5, 'rgba(20,40,100,0.4)'); ds.addColorStop(1, 'rgba(10,30,80,0)');
+                ctx.fillStyle = ds; ctx.beginPath(); ctx.ellipse(s*0.2, s*0.1, s*0.25, s*0.15, 0.2, 0, Math.PI*2); ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        function drawDwarfPlanet(dp) {
+            const screen = toScreen(dp.x, dp.y);
+            const s = dp.size;
+            ctx.save(); ctx.translate(screen.x, screen.y); ctx.rotate(dp.rotationAngle);
+            if (dp.elongated) { ctx.scale(1.4, 0.7); }
+            const shadowGradient = ctx.createRadialGradient(-s * 0.3, -s * 0.3, s * 0.03, 0, 0, s);
+            shadowGradient.addColorStop(0, dp.color); shadowGradient.addColorStop(0.6, dp.color);
+            shadowGradient.addColorStop(1, 'rgba(0,0,0,0.5)');
+            ctx.fillStyle = shadowGradient;
+            ctx.beginPath(); ctx.arc(0, 0, s, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,0.15)';
+            ctx.beginPath(); ctx.arc(s * 0.2, -s * 0.3, s * 0.3, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.beginPath(); ctx.arc(-s * 0.25, s * 0.2, s * 0.25, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+            
+            if (dp.moon) {
+                dp.moon.angle += dp.moon.speed * 0.001;
+                const mx = screen.x + Math.cos(dp.moon.angle) * dp.moon.distance;
+                const my = screen.y + Math.sin(dp.moon.angle) * dp.moon.distance;
+                const ms = dp.moon.size;
+                
+                const mg = ctx.createRadialGradient(mx, my, ms*0.3, mx, my, ms*2.5);
+                mg.addColorStop(0, 'rgba(200,200,210,0.4)');
+                mg.addColorStop(1, 'transparent');
+                ctx.fillStyle = mg;
+                ctx.beginPath();
+                ctx.arc(mx, my, ms*2.5, 0, Math.PI*2);
+                ctx.fill();
+                
+                const msh = ctx.createRadialGradient(mx-ms*0.2, my-ms*0.2, 0.2, mx, my, ms);
+                msh.addColorStop(0, dp.moon.color);
+                msh.addColorStop(0.5, dp.moon.color);
+                msh.addColorStop(1, '#555');
+                ctx.fillStyle = msh;
+                ctx.beginPath();
+                ctx.arc(mx, my, ms, 0, Math.PI*2);
+                ctx.fill();
+                
+                ctx.fillStyle = 'rgba(80,40,30,0.4)';
+                ctx.beginPath();
+                ctx.arc(mx + ms*0.2, my - ms*0.1, ms*0.4, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+
+        function showModal(name, type, data) {
+            const title = name;
+            const message = data.message || null;
+            const emoji = data.emoji || '⭐';
+            const image = data.image || null;
+            function buildContent(imageHTML) {
+                const msgHTML = message ? `<p class="modal-message">${message.replace(/\n/g, '<br>')}</p>` : '';
+                modalContent.innerHTML = `${imageHTML}<h2 class="modal-title">${emoji} ${title}</h2>${msgHTML}<button class="modal-close" id="btnClose">💫 Cerrar 💫</button>`;
+                document.getElementById('btnClose').addEventListener('click', closeModal);
+                modalOverlay.classList.add('active');
+            }
+            if (image) {
+                const img = new Image();
+                img.onload = () => buildContent(`<img src="${image}" alt="${name}" class="modal-image">`);
+                img.onerror = () => buildContent(`<div class="modal-placeholder">${emoji}</div>`);
+                img.src = image;
+            } else {
+                buildContent(`<div class="modal-placeholder">${emoji}</div>`);
+            }
+        }
+
+        function closeModal() { modalOverlay.classList.remove('active'); }
+        modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+
+        function detectClickTarget(screenX, screenY) {
+            const sunScreen = toScreen(sun.x, sun.y);
+            if (Math.hypot(screenX - sunScreen.x, screenY - sunScreen.y) < sun.radius + 18) {
+                return { type: 'sun', name: 'Sol', data: SUN_DATA, alwaysShow: true };
+            }
+            for (const comet of comets) {
+                if (!comet.alive) continue;
+                const cometScreen = toScreen(comet.x, comet.y);
+                if (Math.hypot(screenX - cometScreen.x, screenY - cometScreen.y) < comet.size * 5 + 15) {
+                    if (!discoveredComets.has(comet.id)) {
+                        const nextSongIndex = (currentSongIndex + 1) % CONFIG.PLAYLIST.length;
+                        const songData = CONFIG.PLAYLIST[nextSongIndex];
+                        return { 
+                            type: 'comet', 
+                            name: songData.name, 
+                            data: { 
+                                message: songData.message, 
+                                emoji: songData.emoji
+                            }, 
+                            cometId: comet.id, 
+                            isNew: true 
+                        };
+                    }
+                }
+            }
+            const sortedPlanets = [...planets].sort((a, b) => b.orbitRadius - a.orbitRadius);
+            for (const planet of sortedPlanets) {
+                const ps = toScreen(planet.x, planet.y);
+                if (Math.hypot(screenX - ps.x, screenY - ps.y) < planet.size + 14) {
+                    const ad = discoveredPlanets.has(planet.name);
+                    const pData = PLANET_DATA[planet.name];
+                    return { type: 'planet', name: planet.name, data: { message: pData.message, emoji: pData.emoji, image: pData.image }, isNew: !ad, alreadyDiscovered: ad };
+                }
+            }
+            for (const dp of dwarfPlanets) {
+                const dps = toScreen(dp.x, dp.y);
+                if (Math.hypot(screenX - dps.x, screenY - dps.y) < dp.size + 10) {
+                    const ad = discoveredDwarfPlanets.has(dp.name);
+                    return { type: 'dwarf', name: dp.name, data: { emoji: dp.emoji, image: dp.image }, isNew: !ad, alreadyDiscovered: ad };
+                }
+            }
+            const vs = stars.filter(star => {
+                if (!star.isSpecial || discoveredStars.has(star.id)) return false;
+                const ss = toScreen(Math.cos(star.angle)*star.orbitRadius, Math.sin(star.angle)*star.orbitRadius);
+                return Math.hypot(screenX-ss.x, screenY-ss.y) < star.radius+10;
+            });
+            if (vs.length > 0) {
+                const closest = vs.reduce((a, b) => {
+                    const pa = toScreen(Math.cos(a.angle)*a.orbitRadius, Math.sin(a.angle)*a.orbitRadius);
+                    const pb = toScreen(Math.cos(b.angle)*b.orbitRadius, Math.sin(b.angle)*b.orbitRadius);
+                    return Math.hypot(screenX-pa.x, screenY-pa.y) < Math.hypot(screenX-pb.x, screenY-pb.y) ? a : b;
+                });
+                return { type: 'star', name: 'Estrella del Amor', data: { message: closest.message, emoji: '⭐' }, starId: closest.id, isNew: true };
+            }
+            return null;
+        }
+
+        function handleClick(event) {
+            if (dragMoved) return;
+            const rect = canvas.getBoundingClientRect();
+            const target = detectClickTarget(event.clientX - rect.left, event.clientY - rect.top);
+            if (!target) return;
+            
+            if (target.type === 'sun') {
+                if (!discoveredStars.has('sun')) { discoveredStars.add('sun'); discoveries++; updateCounter(); showDiscoveryToast(target.name, target.type); }
+                showModal(target.name, target.type, target.data); return;
+            }
+            
+            if (target.type === 'comet' && target.isNew) {
+                discoveredComets.add(target.cometId);
+                
+                // Solo muestra modal y suma al contador las primeras 10 veces
+                if (cometDiscoveryCount < 10) { 
+                    discoveries++; 
+                    cometDiscoveryCount++; 
+                    updateCounter();
+                    showCometToast(target.name);
+                    showModal(target.name, target.type, target.data);
+                }
+                
+                // Cambiar a la siguiente canción SIEMPRE
+                if (!musicStarted || !isMusicPlaying) { 
+                    startMusic(); 
+                } else { 
+                    nextSong(); 
+                }
+                return;
+            }
+            
+            if (target.type === 'planet' && !target.alreadyDiscovered) {
+                discoveredPlanets.add(target.name); discoveries++; updateCounter();
+                showDiscoveryToast(target.name, target.type);
+                showModal(target.name, target.type, target.data); return;
+            }
+            if (target.type === 'dwarf' && !target.alreadyDiscovered) {
+                discoveredDwarfPlanets.add(target.name); discoveries++; updateCounter();
+                showDiscoveryToast(target.name, 'dwarf');
+                showModal(target.name, 'dwarf', target.data); return;
+            }
+            if (target.type === 'star' && target.isNew) {
+                discoveredStars.add(target.starId); discoveries++; updateCounter();
+                showDiscoveryToast(target.name, target.type);
+                showModal(target.name, target.type, target.data);
+            }
+        }
+
+        function updateAll() {
+            planets.forEach(p => {
+                p.angle += p.speed * 0.003; p.x = Math.cos(p.angle) * p.orbitRadius; p.y = Math.sin(p.angle) * p.orbitRadius;
+                p.rotationAngle += p.rotationSpeed * 0.016;
+            });
+            dwarfPlanets.forEach(dp => {
+                dp.angle += dp.speed * 0.003; dp.x = Math.cos(dp.angle) * dp.orbitRadius; dp.y = Math.sin(dp.angle) * dp.orbitRadius;
+                dp.rotationAngle += dp.rotationSpeed * 0.016;
+            });
+            asteroids.forEach(a => { a.angle += a.speed; a.rotationAngle += a.rotationSpeed; });
+            kuiperObjects.forEach(obj => { obj.angle += obj.speed; obj.rotationAngle += obj.rotationSpeed; });
+            stars.forEach(s => { s.angle += s.orbitalSpeed; });
+            updateComets(); updateExplosions(); updateShootingStars();
+        }
+
+        function draw() {
+            globalTime += 0.016;
+            ctx.fillStyle = '#000012';
+            ctx.fillRect(0, 0, W, H);
+            offsetX += (targetX - offsetX) * 0.06;
+            offsetY += (targetY - offsetY) * 0.06;
+            drawNebulae();
+            drawStars();
+            drawOrbits();
+            drawAsteroidBelt();
+            drawKuiperBelt();
+            drawComets();
+            drawExplosions();
+            const sp = [...planets].sort((a, b) => a.orbitRadius - b.orbitRadius);
+            sp.forEach(p => drawPlanet(p));
+            dwarfPlanets.forEach(dp => drawDwarfPlanet(dp));
+            drawSun();
+            drawShootingStars();
+            requestAnimationFrame(draw);
+        }
+
+        function update() { updateAll(); requestAnimationFrame(update); }
+
+        function getPosition(e) { const t = e.touches ? e.touches[0] : e; return { x: t.clientX, y: t.clientY }; }
+        function startDrag(e) {
+            e.preventDefault(); isDragging = true; dragMoved = false;
+            const p = getPosition(e); lastMouseX = p.x; lastMouseY = p.y;
+            document.body.style.cursor = 'grabbing';
+        }
+        function moveDrag(e) {
+            if (!isDragging) return;
+            const p = getPosition(e);
+            if (Math.abs(p.x - lastMouseX) > 2 || Math.abs(p.y - lastMouseY) > 2) dragMoved = true;
+            targetX += p.x - lastMouseX; targetY += p.y - lastMouseY;
+            const lim = getLimits();
+            targetX = clamp(targetX, lim.minX, lim.maxX); targetY = clamp(targetY, lim.minY, lim.maxY);
+            lastMouseX = p.x; lastMouseY = p.y;
+        }
+        function endDrag(e) { if (!dragMoved) handleClick(e); isDragging = false; dragMoved = false; document.body.style.cursor = 'grab'; }
+
+        document.addEventListener('keydown', (e) => {
+            const s = 30;
+            switch(e.key) {
+                case 'ArrowLeft': case 'a': targetX -= s; break;
+                case 'ArrowRight': case 'd': targetX += s; break;
+                case 'ArrowUp': case 'w': targetY -= s; break;
+                case 'ArrowDown': case 's': targetY += s; break;
+                case 'f': fullscreenBtn.click(); break;
+            }
+            const lim = getLimits();
+            targetX = clamp(targetX, lim.minX, lim.maxX); targetY = clamp(targetY, lim.minY, lim.maxY);
+        });
+
+        canvas.addEventListener('mousedown', startDrag);
+        window.addEventListener('mousemove', moveDrag);
+        window.addEventListener('mouseup', endDrag);
+        canvas.addEventListener('touchstart', startDrag, { passive: false });
+        canvas.addEventListener('touchmove', moveDrag, { passive: false });
+        canvas.addEventListener('touchend', (e) => {
+            if (!dragMoved) { const t = e.changedTouches[0]; handleClick({ clientX: t.clientX, clientY: t.clientY }); }
+            isDragging = false; dragMoved = false;
+        });
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) return;
+            const rect = canvas.getBoundingClientRect();
+            const target = detectClickTarget(e.clientX - rect.left, e.clientY - rect.top);
+            const cc = target && (target.type === 'sun' || target.isNew);
+            canvas.style.cursor = cc ? 'pointer' : 'grab';
+        });
+        window.addEventListener('resize', () => {
+            W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight;
+            const lim = getLimits();
+            targetX = clamp(targetX, lim.minX, lim.maxX); targetY = clamp(targetY, lim.minY, lim.maxY);
+        });
+
+        update();
+        draw();
+    </script>
+</body>
+</html>
