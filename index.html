@@ -350,7 +350,7 @@
         }
 
         function startMusic() {
-            if (!musicStarted) { initAudio(); startMusic(); }
+            if (!musicStarted) { initAudio(); musicStarted = true; }
             if (!isMusicPlaying) {
                 audioElement.play().then(() => {
                     isMusicPlaying = true;
